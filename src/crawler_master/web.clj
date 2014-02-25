@@ -23,6 +23,8 @@
 
 ;;;;;;;;;MQ
 
+(def counter (ref 0))
+
 (def ^{:const true}
   crawler-exchange "url-crawler")
 
@@ -32,7 +34,9 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmeter urls-meter "urls")
+;(defmeter urls-meter "urls")
+
+(def urls-meter (meter "urls-meter" "urls"))
 
 ;; hash map with urls
 (def crawled-urls (java.util.concurrent.ConcurrentHashMap.))
@@ -42,11 +46,12 @@
     (doseq [url ul]
       (try
         (.putIfAbsent crawled-urls url "")
+        (dosync (alter counter inc))
+        (mark! urls-meter)
         (catch Exception e (println (str "caught exception: " (.getMessage e)))))))
-  (println "# URLS: " (.size crawled-urls)))
+  (println "# URLS: " (.size crawled-urls) " -- " (rate-one urls-meter)))
 
 (defn handle-urls [urls]
-  (mark! urls-meter)
   (new-urls urls))
 
 (defn create-topic-channel-reader
@@ -73,8 +78,26 @@
   (let [payload (str q)]
   (lb/publish ch crawler-exchange key payload :content-type "text/plain" :type "quote.update")))
 
-(publish-quote ch "http://www.appguiden.se" "to-crawl-urls")
-(publish-quote ch "http://www.cse.psu.edu/~groenvel/urls.html" "to-crawl-urls")
+(let [ach (chan)]
+  (create-topic-channel-reader ch ach crawler-exchange "discovered-urls")
+  (ach-mq-reader ach))
+
+(defn load-urls [file]
+  (with-open [rdr (clojure.java.io/reader file)]
+    (doseq [url (line-seq rdr)]
+      (.putIfAbsent crawled-urls url ""))))
+
+(defn apa []
+  (mark! urls-meter)
+  (println "APA")
+  ;; load urls from file
+  (load-urls "/tmp/urls.txt")
+  (doseq [url (iterator-seq (.keys crawled-urls))]
+        (do (Thread/sleep 100)
+      (publish-quote ch url "to-crawl-urls")))
+  (publish-quote ch "http://www.appguiden.se" "to-crawl-urls")
+  (publish-quote ch "http://www.cse.psu.edu/~groenvel/urls.html" "to-crawl-urls"))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn json-response [data & [status]]
@@ -86,7 +109,7 @@
 (defn uuid [] (str (java.util.UUID/randomUUID)))
 
 ; pages
-(def indexpage (str
+(defn indexpage [] (str
     (html
       (head
         (title "HTML-gen using Clojure")
@@ -95,6 +118,7 @@
       (h1 "Welcome to Crawler - Master"))
       (ahref "/elems" "My page")
       (h2 "Status")
+      (p "Nr of URLs: " (.size crawled-urls))
       (p (str "Crawling rate (new urls / min): " (rate-one urls-meter)))
       (p (.toString conn))
       (footer
@@ -111,7 +135,7 @@
     (json-response {"hello" "johan"}))
 
   (GET "/html" []
-    indexpage))
+    (indexpage)))
 
 
 (def app

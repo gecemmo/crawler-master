@@ -10,4 +10,5 @@
 (defn -main [& args]
 ;  (start-nrepl-server)
   (println "## Crawler - Master" args)
+  (web/apa)
   (run-jetty #'web/app {:port server-port}))
