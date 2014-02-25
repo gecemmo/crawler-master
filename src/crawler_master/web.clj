@@ -69,6 +69,12 @@
                    (recur))
                  (println "Closing..." (.toString (java.util.Date.)))))
 
+(defn publish-quote [ch q key]
+  (let [payload (str q)]
+  (lb/publish ch crawler-exchange key payload :content-type "text/plain" :type "quote.update")))
+
+(publish-quote ch "http://www.appguiden.se" "to-crawl-urls")
+(publish-quote ch "http://www.cse.psu.edu/~groenvel/urls.html" "to-crawl-urls")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn json-response [data & [status]]
