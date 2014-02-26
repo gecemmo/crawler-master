@@ -44,11 +44,8 @@
 (defn new-urls [urls]
   (let [ul (clojure.string/split urls #"\s")]
     (doseq [url ul]
-      (try
-        ;(println "NEW URL: " url)
         (if-not (.putIfAbsent crawled-urls url "")
-          (mark! urls-meter))
-        (catch Exception e (println (str "caught exception: " (.getMessage e)))))))
+          (mark! urls-meter))))
   (println "# URLS: " (.size crawled-urls) " -- " (rate-one urls-meter)))
 
 (defn handle-urls [urls]
