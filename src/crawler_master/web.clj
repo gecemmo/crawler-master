@@ -92,9 +92,9 @@
   (println "APA")
   ;; load urls from file
   (load-urls "/tmp/urls.txt")
-  (doseq [url (iterator-seq (.keys crawled-urls))]
-        (do (Thread/sleep 100)
-      (publish-quote ch url "to-crawl-urls")))
+  (async/thread (doseq [url (iterator-seq (.keys crawled-urls))]
+        (do (Thread/sleep 25)
+      (publish-quote ch url "to-crawl-urls"))))
   (publish-quote ch "http://www.appguiden.se" "to-crawl-urls")
   (publish-quote ch "http://www.cse.psu.edu/~groenvel/urls.html" "to-crawl-urls"))
 
