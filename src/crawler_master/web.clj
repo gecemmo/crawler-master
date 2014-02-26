@@ -41,8 +41,6 @@
 ;; hash map with urls
 (def crawled-urls (java.util.concurrent.ConcurrentHashMap.))
 
-(if-not (.putIfAbsent crawled-urls "dsadasss" "") "new url")
-
 (defn new-urls [urls]
   (let [ul (clojure.string/split urls #"\s")]
     (doseq [url ul]
