@@ -45,6 +45,7 @@
   (let [ul (clojure.string/split urls #"\s")]
     (doseq [url ul]
       (try
+        ;(println "NEW URL: " url)
         (.putIfAbsent crawled-urls url "")
         (dosync (alter counter inc))
         (mark! urls-meter)
@@ -116,7 +117,7 @@
       )
     (body
       (h1 "Welcome to Crawler - Master"))
-      (ahref "/elems" "My page")
+      (ahref "/urls" "Snapshot of URLs")
       (h2 "Status")
       (p "Nr of URLs: " (.size crawled-urls))
       (p (str "Crawling rate (new urls / min): " (rate-one urls-meter)))
@@ -131,8 +132,8 @@
 
 (defroutes handler
 
-  (GET "/johan" []
-    (json-response {"hello" "johan"}))
+  (GET "/urls" []
+    (json-response (take 1000 (iterator-seq (.keys crawled-urls)))))
 
   (GET "/html" []
     (indexpage)))
