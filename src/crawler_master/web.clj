@@ -41,14 +41,15 @@
 ;; hash map with urls
 (def crawled-urls (java.util.concurrent.ConcurrentHashMap.))
 
+(if-not (.putIfAbsent crawled-urls "dsadasss" "") "new url")
+
 (defn new-urls [urls]
   (let [ul (clojure.string/split urls #"\s")]
     (doseq [url ul]
       (try
         ;(println "NEW URL: " url)
-        (.putIfAbsent crawled-urls url "")
-        (dosync (alter counter inc))
-        (mark! urls-meter)
+        (if-not (.putIfAbsent crawled-urls url "")
+          (mark! urls-meter))
         (catch Exception e (println (str "caught exception: " (.getMessage e)))))))
   (println "# URLS: " (.size crawled-urls) " -- " (rate-one urls-meter)))
 
