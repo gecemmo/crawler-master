@@ -94,9 +94,9 @@
   (println "APA")
   ;; load urls from file
   (load-urls "/tmp/urls.txt")
-  (doseq [url (iterator-seq (.keys crawled-urls))]
-        (do (Thread/sleep 100)
-      (publish-quote ch url "to-crawl-urls")))
+  (async/thread (doseq [url (iterator-seq (.keys crawled-urls))]
+        (do (Thread/sleep 50)
+      (publish-quote ch url "to-crawl-urls"))))
   (publish-quote ch "http://www.appguiden.se" "to-crawl-urls")
   (publish-quote ch "http://www.cse.psu.edu/~groenvel/urls.html" "to-crawl-urls"))
 
@@ -121,7 +121,7 @@
       (ahref "/urls" "Snapshot of URLs")
       (h2 "Status")
       (p "Nr of URLs: " (.size crawled-urls))
-      (p (str "Crawling rate (new urls / min): " (rate-one urls-meter)))
+      (p (str "Crawling rate (new urls / min): " (* 60 (rate-one urls-meter))))
       (p (.toString conn))
       (footer
         (hr)

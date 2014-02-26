@@ -12,3 +12,4 @@
   (println "## Crawler - Master" args)
   (web/apa)
   (run-jetty #'web/app {:port server-port}))
+ ; (web/apa))
